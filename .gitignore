@@ -218,6 +218,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Ignore intelliJ
+*.iml
+
 
 ########## REDIS #############
 *.rdb
