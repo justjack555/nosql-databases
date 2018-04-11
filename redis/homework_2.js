@@ -34,6 +34,20 @@ function article_vote(client, user, article) {
 
 function article_switch_vote(client, user, from_article, to_article) {
     // HOMEWORK 2 Part I
+
+    // search for ids
+    var old_id = from_article.split(':')[1];
+    var new_id = to_article.split(':')[1];
+
+    // remove vote
+    client.zincrby('score:', -VOTE_SCORE, from_article);
+    client.srem('voted:' + old_id, user);
+    client.hincrby(from_article, 'votes', -1);
+
+    // add vote
+	client.zincrby('score:', VOTE_SCORE, to_article);
+    client.sadd('voted:' + new_id, user);
+    client.hincrby(to_article, 'votes', 1);
 }
 
 var client = redis.createClient();
@@ -57,14 +71,14 @@ client.on("connect", function () {
 	// Which article's score is between 10 and 20?
 	// PRINT THE ARTICLE'S LINK TO STDOUT:
 	// HOMEWORK 2 Part II
-	// client.?(...., function(err, reply){
+    client.zrangebyscore('score:', 10, 20, function(err, reply){
 
-		// print client.?	
-
-		// NOTE/HINT: This invocation of quit may need to be nested
-		// inside another callback. Make sure it is the last to be invoked..		
-	//	client.quit();			
-	// });
+        // get link
+        client.hget(reply[0], 'link', function(err, result){
+            console.log(result);
+            client.quit();
+        });
+    });
 });
 
 
