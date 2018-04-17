@@ -187,6 +187,62 @@ function countUSMovies(db, callback){
     });
 }
 
+function addVotes(db, callback){
+    const joinColl = db.collection("test");
+    console.log("Adding votes to test collection...");
+    joinColl.insertMany([{
+        title: "Pandas",
+        vote: "bad"
+    }, {
+        title: "Pandas",
+        vote: "good"
+    }, {
+        title: "Pandas",
+        vote: "bad"
+    }, {
+        title: "Very Private Lesson",
+        vote: "good"
+    }], function(err, reply){
+        assert.equal(err, null);
+        assert.equal(reply.result.n, 4);
+        assert.equal(reply.ops.length, 4);
+        console.log("Insertion of votes successful...");
+        callback();
+    });
+
+
+}
+
+function joinOnVotes(db, callback){
+    const collection = db.collection(collName);
+    const collToJoin = "test";
+
+    const pipeline = [{
+        $lookup: {
+            from: collToJoin,
+            localField: "title",
+            foreignField: "title",
+            as: "votes"
+        }
+    }];
+
+    console.log("Computing lookup results...");
+    collection.aggregate(pipeline, function(err, cursor){
+        cursor.toArray(function(error, documents){
+            assert.equal(error, null);
+
+            documents.forEach(function(doc){
+                if(doc.votes.length > 0){
+                    console.log("The following movie has votes in the test collection: ");
+                    console.log(doc);
+                }
+            });
+
+            callback();
+        });
+    });
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -200,17 +256,28 @@ MongoClient.connect(url, function(err, client) {
         findUnrated(db, function(){
 
             // Insert Pandas movie
-//            insertPandas(db, function(){
+            insertPandas(db, function(){
 
                 // Find number of shorts
                 countShorts(db, function(){
 
                     countUSMovies(db, function(){
-                        closeConn(client);
+
+                        //Add votes to test
+                        addVotes(db, function(){
+
+                            //Finally, join on Panda title
+                            joinOnVotes(db, function(){
+
+                                //Clean up
+                                closeConn(client);
+
+                                    //Callback hell much?
+                            });
+                        });
                     });
                 });
-//            });
+            });
         });
     });
-
 });
