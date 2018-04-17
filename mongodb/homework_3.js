@@ -44,8 +44,7 @@ function updateUnrated(db, callback){
 
     collection.updateMany(unratedParam, unratedUpdate, function(err, result) {
         assert.equal(err, null);
-        assert.equal(1, result.result.ok);
-//        console.log("Number of updated docs is: " + result.modifiedCount);
+        console.log("Successfully updated rated field for " + result.modifiedCount + " documents...");
         callback();
     });
 }
@@ -61,10 +60,7 @@ function insertPandas(db, callback){
     // Simple insertion of panda doc
     collection.insertOne(pandasDoc, function(err, result){
         assert.equal(err, null);
-//        console.log("INSERT PANDAS: No err..");
-        assert.equal(result.result.n, 1);
-        assert.equal(result.ops.length, 1);
-        console.log("Insertion of panda successful...");
+        console.log("Insertion of " + result.result.n + " Pandas movie document successful...");
         callback();
     });
 }
@@ -74,8 +70,6 @@ function insertPandas(db, callback){
  * collection
  */
 function countShorts(db, callback){
-//    console.log("Counting number of shorts...");
-
     const collection = db.collection(collName);
 
     const pipeline = [ {
@@ -94,9 +88,6 @@ function countShorts(db, callback){
     collection.aggregate(pipeline, function(err, cursor){
         cursor.toArray(function(error, documents){
            assert.equal(error, null);
-
-//           console.log("countshorts: Number of docs is: " + documents.length);
-
            documents.forEach(function(doc){
                console.log(doc);
            });
@@ -110,8 +101,6 @@ function countShorts(db, callback){
  * Function to count US movies
  */
 function countUSMovies(db, callback){
-//    console.log("Counting number of US movies...");
-
     const collection = db.collection(collName);
 
     const pipeline = [ {
@@ -134,9 +123,6 @@ function countUSMovies(db, callback){
     collection.aggregate(pipeline, function(err, cursor){
         cursor.toArray(function(error, documents){
             assert.equal(error, null);
-
-//            console.log("countUSA: Number of docs is: " + documents.length);
-
             documents.forEach(function(doc){
                 console.log(doc);
             });
@@ -148,7 +134,7 @@ function countUSMovies(db, callback){
 
 function addVotes(db, callback){
     const joinColl = db.collection("test");
-//    console.log("Adding votes to test collection...");
+
     joinColl.insertMany([{
         title: "Pandas",
         vote: "bad"
@@ -163,9 +149,6 @@ function addVotes(db, callback){
         vote: "good"
     }], function(err, reply){
         assert.equal(err, null);
-        assert.equal(reply.result.n, 4);
-        assert.equal(reply.ops.length, 4);
-//        console.log("Insertion of votes successful...");
         callback();
     });
 
