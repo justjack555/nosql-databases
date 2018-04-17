@@ -107,6 +107,46 @@ function insertPandas(db, callback){
     });
 }
 
+/**
+ * Function that prints the number of shorts in the movies
+ * collection
+ */
+function countShorts(db, callback){
+    console.log("Counting number of shorts...");
+
+    const collection = db.collection(collName);
+
+    const pipeline = [ {
+        $match: {
+            genres: "Short"
+        }},
+        {
+            $group: {
+                _id: "Short",
+                count: {
+                    $sum: 1
+                }
+            }
+        }];
+
+    collection.aggregate(pipeline, function(err, cursor){
+        cursor.toArray(function(error, documents){
+           assert.equal(error, null);
+
+           console.log("countshorts: Number of docs is: " + documents.length);
+
+           documents.forEach(function(doc){
+               console.log(doc);
+           });
+
+           callback();
+        });
+    });
+
+
+
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -120,9 +160,13 @@ MongoClient.connect(url, function(err, client) {
         findUnrated(db, function(){
 
             // Insert Pandas movie
-            insertPandas(db, function(){
-                closeConn(client);
-            });
+//            insertPandas(db, function(){
+
+                // Find number of shorts
+                countShorts(db, function(){
+                    closeConn(client);
+                });
+//            });
         });
     });
 
