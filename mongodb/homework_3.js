@@ -6,6 +6,20 @@ const url = 'mongodb://localhost:27017';
 const dbName = 'movies';
 const collName = 'movies';
 
+// Pandas movie document object
+const pandasDoc = {
+    title : "Pandas",
+    year : 2018,
+    countries : ["USA"],
+    genres: [ "Documentary", "Short"],
+    directors: [" David Douglas", "Drew Fellman"],
+    imdb : {
+        id : 7860270,
+        rating : 7.6,
+        votes : 39
+    }
+};
+
 /**
   * Function to be invoked at connection closing time
  */
@@ -74,6 +88,24 @@ function updateUnrated(db, callback){
     });
 }
 
+/**
+ * Function to insert pandas short
+ */
+function insertPandas(db, callback){
+    console.log("Inserting pandas short...");
+
+    const collection = db.collection(collName);
+
+    // Simple insertion of panda doc
+    collection.insertOne(pandasDoc, function(err, result){
+        assert.equal(err, null);
+        console.log("INSERT PANDAS: No err..");
+        assert.equal(result.result.n, 1);
+        assert.equal(result.ops.length, 1);
+        console.log("Insertion of panda successful...");
+        callback();
+    });
+}
 
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
@@ -81,10 +113,16 @@ MongoClient.connect(url, function(err, client) {
 
     const db = client.db(dbName);
 
-    //Find unrated shorts
+    //Updated unrated shorts
     updateUnrated(db, function(){
+
+        // Check updated results
         findUnrated(db, function(){
-            closeConn(client);
+
+            // Insert Pandas movie
+            insertPandas(db, function(){
+                closeConn(client);
+            });
         });
     });
 
