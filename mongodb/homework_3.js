@@ -147,6 +147,46 @@ function countShorts(db, callback){
 
 }
 
+/**
+ * Function to count US movies
+ */
+function countUSMovies(db, callback){
+    console.log("Counting number of US movies...");
+
+    const collection = db.collection(collName);
+
+    const pipeline = [ {
+        $match: {
+            countries: "USA",
+            rated : "Pending rating"
+        }},
+        {
+            $group: {
+                _id: {
+                    country: "USA",
+                    rating : "Pending rating"
+                },
+                count: {
+                    $sum: 1
+                }
+            }
+        }];
+
+    collection.aggregate(pipeline, function(err, cursor){
+        cursor.toArray(function(error, documents){
+            assert.equal(error, null);
+
+            console.log("countUSA: Number of docs is: " + documents.length);
+
+            documents.forEach(function(doc){
+                console.log(doc);
+            });
+
+            callback();
+        });
+    });
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -164,7 +204,10 @@ MongoClient.connect(url, function(err, client) {
 
                 // Find number of shorts
                 countShorts(db, function(){
-                    closeConn(client);
+
+                    countUSMovies(db, function(){
+                        closeConn(client);
+                    });
                 });
 //            });
         });
