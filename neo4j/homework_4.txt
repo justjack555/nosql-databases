@@ -1,9 +1,9 @@
 // The scenario you have used for your schema is:
-
-
-// This is an example. Your own commands should *not* be commented out so we can pipe the file into the cypher-shell.
-// If you'd like to test your commands, you can run 'cat homework_4.txt | cypher-shell -u neo4j -p test' from
-// the vagrant box command line. Make sure neo4j is running first.
+//
+// I am modeling my immediate family tree, along
+// with a couple of colleges that multiple family
+// members have attended and a place of work that
+// multiple family members have been employed at.
 
 // Nodes
 CREATE (n:Workplace { company_name: 'The Big Apple'});
@@ -16,7 +16,6 @@ CREATE (n:Person { name: 'Becca'});
 CREATE (n:Person { name: 'Jack'});
 
 // Relationships
-
 MATCH (a:Person), (b:Person)
        WHERE a.name = 'Andrew' AND b.name = 'Becca'
        CREATE (a)-[r:BROTHER_OF { since: 1998}]->(b)
@@ -76,3 +75,13 @@ MATCH (a:Person), (b:Workplace)
        WHERE a.name='Andrew' AND b.company_name = 'The Big Apple'
        CREATE (a)-[r:WORKED_AT { Year: 2013 }]->(b)
        RETURN type(r), r.Year;
+
+// Find people who have worked at The Big Apple
+MATCH (comp:Workplace { company_name: 'The Big Apple' })<-[r]-(person)
+       RETURN type(r), comp.company_name, person.name;
+
+// Find people who are either mother or brother of Jack
+MATCH (jack:Person { name: 'Jack' })<-[relation:MOTHER_OF|:BROTHER_OF]-(person)
+       RETURN jack.name, person.name, type(relation);
+
+
