@@ -13,3 +13,10 @@ justjack555/nosql-databases "master" branch and the justjack555/nosql-databases
 solution code, simply do the following starting from the nosql-databases root directory:
 1. `$ cd redis`
 2. `$ node homework_2.js`
+
+## Homework 4
+The homework 4 solution code appears on the justjack555/nosql-databases
+"homework-4" branch. The homework_4.txt file contains a description of 
+which situation was modeled, the 8 commands used to create 8 nodes, the
+12 commands used to create 12 relationships, and the 2 commands used
+to query for subgraphs.
