@@ -4,4 +4,75 @@
 // This is an example. Your own commands should *not* be commented out so we can pipe the file into the cypher-shell.
 // If you'd like to test your commands, you can run 'cat homework_4.txt | cypher-shell -u neo4j -p test' from
 // the vagrant box command line. Make sure neo4j is running first.
-// CREATE (a:person { name: 't' });
+
+// Nodes
+CREATE (n:Workplace { company_name: 'The Big Apple'});
+CREATE (n:Institution { school_name: 'Johnson & Wales'});
+CREATE (n:Institution { school_name: 'Providence College'});
+CREATE (n:Person { name: 'Becky'});
+CREATE (n:Person { name: 'John'});
+CREATE (n:Person { name: 'Andrew'});
+CREATE (n:Person { name: 'Becca'});
+CREATE (n:Person { name: 'Jack'});
+
+// Relationships
+
+MATCH (a:Person), (b:Person)
+       WHERE a.name = 'Andrew' AND b.name = 'Becca'
+       CREATE (a)-[r:BROTHER_OF { since: 1998}]->(b)
+       RETURN type(r), r.since;
+
+MATCH (a:Person), (b:Person)
+       WHERE a.name='Jack' AND b.name = 'Becca'
+       CREATE (a)-[r:BROTHER_OF { since: 1998 }]->(b)
+       RETURN type(r), r.since;
+
+MATCH (a:Person), (b:Person)
+       WHERE a.name='Andrew' AND b.name = 'Jack'
+       CREATE (a)-[r:BROTHER_OF { since: 1996 }]->(b)
+       RETURN type(r), r.since;
+
+MATCH (a:Person), (b:Person)
+       WHERE a.name='Becky' AND b.name = 'Jack'
+       CREATE (a)-[r:MOTHER_OF { since: 1995 }]->(b)
+       RETURN type(r), r.since;
+
+MATCH (a:Person), (b:Person)
+       WHERE a.name='John' AND b.name = 'Andrew'
+       CREATE (a)-[r:FATHER_OF { since: 1996 }]->(b)
+       RETURN type(r), r.since;
+
+MATCH (a:Person), (b:Person)
+       WHERE a.name='Jack' AND b.name = 'Becky'
+       CREATE (a)-[r:SON_OF { since: 1995 }]->(b)
+       RETURN type(r), r.since;
+
+MATCH (a:Person), (b:Institution)
+       WHERE a.name='Becky' AND b.school_name = 'Providence College'
+       CREATE (a)-[r:ATTENDED { Graduated_In: 1990 }]->(b)
+       RETURN type(r), r.Graduated_In;
+
+MATCH (a:Person), (b:Institution)
+       WHERE a.name='Jack' AND b.school_name = 'Providence College'
+       CREATE (a)-[r:ATTENDED { Graduated_In: 2018 }]->(b)
+       RETURN type(r), r.Graduated_In;
+
+MATCH (a:Person), (b:Institution)
+       WHERE a.name='Becca' AND b.school_name = 'Johnson & Wales'
+       CREATE (a)-[r:ATTENDED { Graduated_In: 2021 }]->(b)
+       RETURN type(r), r.Graduated_In;
+
+MATCH (a:Person), (b:Institution)
+       WHERE a.name='John' AND b.school_name = 'Johnson & Wales'
+       CREATE (a)-[r:ATTENDED { Graduated_In: 1990 }]->(b)
+       RETURN type(r), r.Graduated_In;
+
+MATCH (a:Person), (b:Workplace)
+       WHERE a.name='Jack' AND b.company_name = 'The Big Apple'
+       CREATE (a)-[r:WORKED_AT { Year: 2011 }]->(b)
+       RETURN type(r), r.Year;
+
+MATCH (a:Person), (b:Workplace)
+       WHERE a.name='Andrew' AND b.company_name = 'The Big Apple'
+       CREATE (a)-[r:WORKED_AT { Year: 2013 }]->(b)
+       RETURN type(r), r.Year;
