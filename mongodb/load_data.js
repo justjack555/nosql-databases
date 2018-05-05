@@ -11,6 +11,16 @@ const dbName = 'jackstagram';
 const usersColl = 'users';
 const mediaColl = 'media';
 
+// Types of media
+const photoType = "photo";
+const videoType = "video";
+
+// Image and video sizes
+const minPhotoSize = 3000;
+const photoWeight = 300000;
+const minVidSize = 1000000;
+const vidWeight = 100000000;
+
 // Our three users
 const usersData = [{
     _id: 1,
@@ -272,6 +282,30 @@ function joinOnVotes(db, callback){
 }
 */
 
+function printMedia(entry){
+    var str = "";
+
+    str += "_id: " + entry._id + ",\n";
+    str += "type: " + entry.type + ",\n";
+    str += "photo_data: ";
+    if(entry.photoData){
+        str += "{\n\t file_size: " + entry.photoData.file_size + ",\n\t"
+            + "filter: " + entry.photoData.filter + "\n},\n";
+    }else{
+        str += "null\n";
+    }
+
+    str += "video_data: ";
+    if(entry.videoData){
+        str += "video_data: {\n\t file_size: " + entry.videoData.file_size + ",\n\t"
+            + "length: " + entry.videoData.length + "\n},\n";
+    }else {
+        str += "null\n";
+    }
+
+    console.log(str);
+}
+
 /**
  * Function to insert pandas short
  */
@@ -289,6 +323,84 @@ function addUsers(db, callback){
 }
 
 /**
+ * Simple function to pick media type
+ */
+function genMediaType(mediaEntry){
+    mediaEntry.type = Math.floor(2*Math.random()) === 1 ? photoType : videoType;
+    return mediaEntry.type;
+}
+
+/**
+ * Fill data field based upon type of media
+ * @param mediaEntry
+ */
+function fillMediaData(mediaEntry){
+    var dataObject = {};
+
+    // Fill in data field with photo or video object
+    if(mediaEntry.type === photoType){
+        dataObject.file_size = Math.floor(photoWeight*Math.random()) + minPhotoSize;
+        dataObject.filter = "Valencia";
+        mediaEntry.photoData = dataObject;
+    }else{
+        dataObject.file_size = Math.floor(vidWeight*Math.random()) + minVidSize;
+        dataObject.length = dataObject.file_size/minVidSize;
+        mediaEntry.videoData = dataObject;
+    }
+
+    return 1;
+}
+/**
+ * Add media using user info
+ */
+function addMedia(db, callback){
+    var mediaData = [];
+
+//    const collection = db.collection(usersColl);
+
+    // Iterate through users objects
+    for(var i = 0; i < usersData.length; i++){
+        const user = usersData[i];
+        console.log("ADD_MEDIA: User is: " + user);
+        if(!user.hasOwnProperty("posted_media")){
+            console.log("ADD_MEDIA: Error - no posted_media property for user. Exiting");
+            callback(mediaData);
+            return;
+        }
+
+        // Craft media object
+        for(var j = 0; j < user.posted_media.length; j++){
+            const postId = user.posted_media[j];
+            var mediaEntry = {};
+
+            mediaEntry._id = postId;
+            if(genMediaType(mediaEntry) === null){
+                console.log("ADD_MEDIA: Error - unable to initialize type property. Exiting.");
+                callback(mediaData);
+                return;
+            }
+
+            if(fillMediaData(mediaEntry) === null){
+                console.log("ADD_MEDIA: Error - unable to initialize data property. Exiting.");
+                callback(mediaData);
+                return;
+            }
+
+            mediaData.push(mediaEntry);
+        }
+    }
+
+
+    for(i = 0; i < mediaData.length; i++){
+        printMedia(mediaData[i]);
+    }
+
+    callback();
+}
+
+
+
+/**
     On connection:
  1.) Add users
  2.) Add media
@@ -301,11 +413,13 @@ MongoClient.connect(url, function(err, client) {
     const db = client.db(dbName);
 
     // Insert users
-    addUsers(db, function(){
-       // Close connection
-       console.log("Closing connection to database...");
-       closeConn(client);
-    });
+//    addUsers(db, function(){
+        addMedia(db, function(){
+            // Close connection
+            closeConn(client);
+        });
+
+//    });
 });
 
 
