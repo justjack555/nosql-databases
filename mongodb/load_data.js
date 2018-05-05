@@ -1,38 +1,3 @@
-// Put the use case you chose here. Then justify your database choice:
-//
-//
-// Explain what will happen if coffee is spilled on one of the servers in your cluster, causing it to go down.
-//
-//
-// What data is it not ok to lose in your app? What can you do in your commands to mitigate the risk of lost data?
-//
-//
-
-
-
-//// Action 1: <describe the action here>
-
-
-// Action 2: <describe the action here>
-
-
-// Action 3: <describe the action here>
-
-
-// Action 4: <describe the action here>
-
-
-// Action 5: <describe the action here>
-
-
-// Action 6: <describe the action here>
-
-
-// Action 7: <describe the action here>
-
-
-// Action 8: <describe the action here>
-
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
@@ -46,20 +11,93 @@ const dbName = 'jackstagram';
 const usersColl = 'users';
 const mediaColl = 'media';
 
-// Pandas movie document object
-/*const pandasDoc = {
-    title : "Pandas",
-    year : 2018,
-    countries : ["USA"],
-    genres: [ "Documentary", "Short"],
-    directors: [" David Douglas", "Drew Fellman"],
-    imdb : {
-        id : 7860270,
-        rating : 7.6,
-        votes : 39
-    }
-};
-*/
+// Our three users
+const usersData = [{
+    _id: 1,
+    name : "Jack Ricci",
+    followers : [2],
+    following : [2, 3],
+    activity: [ {
+        media_id: 1,
+        type: "reaction",
+        time: new Date('May 1, 2018 03:24:00'),
+        reaction: {
+            poster: 1,
+            recipient: 2,
+            type: "heart"
+        }
+    }, {
+        media_id: 2,
+        type: "reaction",
+        time: new Date('April 30, 2018 03:24:00'),
+        reaction: {
+            poster: 1,
+            recipient: 2,
+            type: "like"
+        }
+    }, {
+        media_id: 3,
+        type: "comment",
+        time: new Date('May 5, 2018 12:00:00'),
+        comment: {
+            poster: 1,
+            recipient: 1,
+            value: "Love this pic."
+        }
+    }],
+    posted_media: [3, 5, 7, 9, 11, 13]
+}, {
+    _id: 2,
+    name : "Ben Stephens",
+    followers : [1, 3],
+    following : [1],
+    activity: [ {
+        media_id: 1,
+        type: "comment",
+        time: new Date('May 1, 2018 03:30:00'),
+        reaction: {
+            poster: 2,
+            recipient: 2,
+            value: "Thanks for all the love!"
+        }
+    }, {
+        media_id: 3,
+        type: "reaction",
+        time: new Date('August 30, 2018 03:24:00'),
+        reaction: {
+            poster: 2,
+            recipient: 1,
+            type: "like"
+        }
+    }],
+    posted_media: [1, 2, 4, 6, 8, 10, 12]
+}, {
+    _id: 3,
+    name : "Greg Smith",
+    followers : [1],
+    following : [2],
+    activity: [ {
+        media_id: 1,
+        type: "reaction",
+        time: new Date('May 1, 2018 03:25:00'),
+        reaction: {
+            poster: 3,
+            recipient: 2,
+            type: "like"
+        }
+    }, {
+        media_id: 2,
+        type: "comment",
+        time: new Date('May 30, 2018 03:24:00'),
+        reaction: {
+            poster: 3,
+            recipient: 2,
+            value: "You're my hero"
+        }
+    }],
+    posted_media: [14, 15]
+}];
+
 
 /**
  * Function to be invoked at connection closing time
@@ -234,12 +272,40 @@ function joinOnVotes(db, callback){
 }
 */
 
+/**
+ * Function to insert pandas short
+ */
+function addUsers(db, callback){
+    console.log("Adding users...");
+
+    const collection = db.collection(usersColl);
+
+    // Simple insertion of panda doc
+    collection.insertMany(usersData, function(err, result){
+        assert.equal(err, null);
+        console.log("Insertion of " + result.result.n + " users successful...");
+        callback();
+    });
+}
+
+/**
+    On connection:
+ 1.) Add users
+ 2.) Add media
+**/
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
 
-//  const db = client.db(dbName);
-    closeConn(client);
+    // Get database object
+    const db = client.db(dbName);
+
+    // Insert users
+    addUsers(db, function(){
+       // Close connection
+       console.log("Closing connection to database...");
+       closeConn(client);
+    });
 });
 
 

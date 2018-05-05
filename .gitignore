@@ -227,3 +227,4 @@ venv.bak/
 
 ########## MONGODB #############
 mongodb/data
+mongodb/dump
