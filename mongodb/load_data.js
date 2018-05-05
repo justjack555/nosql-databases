@@ -65,7 +65,7 @@ const usersData = [{
         media_id: 1,
         type: "comment",
         time: new Date('May 1, 2018 03:30:00'),
-        reaction: {
+        comment: {
             poster: 2,
             recipient: 2,
             value: "Thanks for all the love!"
@@ -99,7 +99,7 @@ const usersData = [{
         media_id: 2,
         type: "comment",
         time: new Date('May 30, 2018 03:24:00'),
-        reaction: {
+        comment: {
             poster: 3,
             recipient: 2,
             value: "You're my hero"
@@ -303,6 +303,12 @@ function printMedia(entry){
         str += "null\n";
     }
 
+    // Date
+    str += "time_posted: " + entry.time_posted.toISOString() + ",\n";
+
+    //Stats
+    str += "stats: {\n\tnum_reax: " + entry.stats.num_reax + ",\n\tnum_comments: " + entry.stats.num_comments + "\n}"
+
     console.log(str);
 }
 
@@ -350,13 +356,48 @@ function fillMediaData(mediaEntry){
 
     return 1;
 }
+
+/**
+ * Load comments and reactions into media objects
+ */
+function loadReactions(mediaEntry){
+    var i;
+    mediaEntry.reactions = [];
+    mediaEntry.comments = [];
+    mediaEntry.stats = {
+        num_reax : 0,
+        num_comments : 0
+    };
+
+    // Iterate through each user
+    for(i = 0; i < usersData.length; i++){
+        const user = usersData[i];
+        // Iterate through user's activity
+        var j;
+        for(j = 0; j < user.activity.length; j++){
+            const action = user.activity[j];
+            if(action.media_id === mediaEntry._id){
+                if(action.type === "reaction"){
+                    mediaEntry.reactions.push(action.reaction);
+                }else{
+                    mediaEntry.comments.push(action.comment);
+                }
+            }
+        }
+    }
+
+    mediaEntry.stats.num_reax = mediaEntry.reactions.length;
+    mediaEntry.stats.num_comments = mediaEntry.comments.length;
+    return 1;
+}
+
 /**
  * Add media using user info
  */
 function addMedia(db, callback){
     var mediaData = [];
 
-//    const collection = db.collection(usersColl);
+    const collection = db.collection(mediaColl);
 
     // Iterate through users objects
     for(var i = 0; i < usersData.length; i++){
@@ -364,7 +405,7 @@ function addMedia(db, callback){
         console.log("ADD_MEDIA: User is: " + user);
         if(!user.hasOwnProperty("posted_media")){
             console.log("ADD_MEDIA: Error - no posted_media property for user. Exiting");
-            callback(mediaData);
+            callback();
             return;
         }
 
@@ -374,15 +415,28 @@ function addMedia(db, callback){
             var mediaEntry = {};
 
             mediaEntry._id = postId;
+            // Type of media
             if(genMediaType(mediaEntry) === null){
                 console.log("ADD_MEDIA: Error - unable to initialize type property. Exiting.");
-                callback(mediaData);
+                callback();
                 return;
             }
 
+            // Video/photo statistics
             if(fillMediaData(mediaEntry) === null){
                 console.log("ADD_MEDIA: Error - unable to initialize data property. Exiting.");
-                callback(mediaData);
+                callback();
+                return;
+            }
+
+            // Add date
+            const day = Math.floor(31*Math.random()) + 1;
+            mediaEntry.time_posted = new Date('March ' + day + ', 2018 03:24:00');
+
+            // Add reactions and comments
+            if(loadReactions(mediaEntry) === null){
+                console.log("ADD_MEDIA: Error - unable to load reactions. Exiting.");
+                callback();
                 return;
             }
 
@@ -390,12 +444,16 @@ function addMedia(db, callback){
         }
     }
 
-
-    for(i = 0; i < mediaData.length; i++){
+    // Simple insertion of panda doc
+    collection.insertMany(mediaData, function(err, result){
+        assert.equal(err, null);
+        console.log("Insertion of " + result.result.n + " media entries successful...");
+        callback();
+    });
+/*    for(i = 0; i < mediaData.length; i++){
         printMedia(mediaData[i]);
     }
-
-    callback();
+*/
 }
 
 
@@ -413,13 +471,13 @@ MongoClient.connect(url, function(err, client) {
     const db = client.db(dbName);
 
     // Insert users
-//    addUsers(db, function(){
+    addUsers(db, function(){
         addMedia(db, function(){
             // Close connection
             closeConn(client);
         });
 
-//    });
+    });
 });
 
 
