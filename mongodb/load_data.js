@@ -141,6 +141,14 @@ function printMedia(entry){
 */
 
 /**
+ * Function to be invoked at connection closing time
+ */
+function closeConn(client){
+    console.log("Closing connection with server...");
+    client.close();
+}
+
+/**
  * Function to insert pandas short
  */
 function addUsers(db, callback){

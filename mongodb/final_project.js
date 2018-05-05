@@ -33,6 +33,8 @@
 
 // Action 8: <describe the action here>
 
+
+
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
@@ -46,20 +48,14 @@ const dbName = 'jackstagram';
 const usersColl = 'users';
 const mediaColl = 'media';
 
-// Pandas movie document object
-/*const pandasDoc = {
-    title : "Pandas",
-    year : 2018,
-    countries : ["USA"],
-    genres: [ "Documentary", "Short"],
-    directors: [" David Douglas", "Drew Fellman"],
-    imdb : {
-        id : 7860270,
-        rating : 7.6,
-        votes : 39
-    }
+// Base object for new user
+const newUser = {
+    name : "Dan House",
+    followers : [],
+    following : [],
+    activity: [],
+    posted_media: []
 };
-*/
 
 /**
  * Function to be invoked at connection closing time
@@ -234,12 +230,67 @@ function joinOnVotes(db, callback){
 }
 */
 
+/**
+ * Function to insert new user
+ */
+function addUser(db, callback){
+    const collection = db.collection(usersColl);
+
+    // Simple insertion of Dan House
+    collection.insertOne(newUser, function(err, result){
+        assert.equal(err, null);
+        console.log("Insertion of " + result.result.n + " user with name " + result.ops[0].name + " successful...");
+        callback(result.ops[0]._id);
+    });
+}
+
+/**
+ * Function to have user Dan House follow user Jack
+ * @param db
+ * @param followingName
+ * @param callback
+ */
+function followJack(db, newId, followingName, callback){
+    const collection = db.collection(usersColl);
+
+    // Find user to follow and update his/her followers list
+    collection.findOneAndUpdate({name : "Jack Ricci"},
+        {$push : {followers : newId}},
+        {returnOriginal : false},
+        function(err, result){
+            assert.equal(err, null);
+            console.log("FOLLOW_JACK: New length of Jack's follow list is: " + result.value.followers.length);
+
+            // Modify new user's following
+            collection.findOneAndUpdate({_id: newId},
+                {$push : {following : result.value._id}},
+                {returnOriginal : false},
+                function(err, result){
+                    assert.equal(err, null);
+                    console.log("FOLLOW_JACK: New length of Dan's following list is: " + result.value.following.length);
+                    callback();
+            });
+    });
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
 
-//  const db = client.db(dbName);
-    closeConn(client);
+    // Get database object
+    const db = client.db(dbName);
+    const followingName = "Jack Ricci";
+
+    //Sign up for account
+    console.log("Adding user...");
+    addUser(db, function(newId){
+        // Follow someone new
+        console.log("User " + newId + " attempting to follow someone new...");
+        followJack(db, newId, followingName, function(){
+            // Close connection
+            closeConn(client);
+        });
+    });
 });
 
 
