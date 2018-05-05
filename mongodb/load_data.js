@@ -108,180 +108,7 @@ const usersData = [{
     posted_media: [14, 15]
 }];
 
-
-/**
- * Function to be invoked at connection closing time
- */
-function closeConn(client){
-    console.log("Closing connection with server...");
-    client.close();
-}
-
-/**
- * Function to update unrated shorts
- */
 /*
-function updateUnrated(db, callback){
-    const collection = db.collection(collName);
-
-    // Genre must be short, rating must be UNRATED
-    const unratedParam = {
-        "genres" : "Short",
-        "rated" : "NOT RATED"
-    };
-
-    const unratedUpdate = { $set: { rated : "Pending rating" } };
-
-    collection.updateMany(unratedParam, unratedUpdate, function(err, result) {
-        assert.equal(err, null);
-        console.log("Successfully updated rated field for " + result.modifiedCount + " documents...");
-        callback();
-    });
-}
-*/
-
-/**
- * Function to insert pandas short
- */
-/*
-function insertPandas(db, callback){
-//    console.log("Inserting pandas short...");
-
-    const collection = db.collection(collName);
-
-    // Simple insertion of panda doc
-    collection.insertOne(pandasDoc, function(err, result){
-        assert.equal(err, null);
-        console.log("Insertion of " + result.result.n + " Pandas movie document successful...");
-        callback();
-    });
-}
-*/
-
-/**
- * Function that prints the number of shorts in the movies
- * collection
- */
-/*function countShorts(db, callback){
-    const collection = db.collection(collName);
-
-    const pipeline = [ {
-        $match: {
-            genres: "Short"
-        }},
-        {
-            $group: {
-                _id: "Short",
-                count: {
-                    $sum: 1
-                }
-            }
-        }];
-
-    collection.aggregate(pipeline, function(err, cursor){
-        cursor.toArray(function(error, documents){
-            assert.equal(error, null);
-            documents.forEach(function(doc){
-                console.log(doc);
-            });
-
-            callback();
-        });
-    });
-}
-*/
-
-/**
- * Function to count US movies
- */
-/*function countUSMovies(db, callback){
-    const collection = db.collection(collName);
-
-    const pipeline = [ {
-        $match: {
-            countries: "USA",
-            rated : "Pending rating"
-        }},
-        {
-            $group: {
-                _id: {
-                    country: "USA",
-                    rating : "Pending rating"
-                },
-                count: {
-                    $sum: 1
-                }
-            }
-        }];
-
-    collection.aggregate(pipeline, function(err, cursor){
-        cursor.toArray(function(error, documents){
-            assert.equal(error, null);
-            documents.forEach(function(doc){
-                console.log(doc);
-            });
-
-            callback();
-        });
-    });
-}
-*/
-/*
-function addVotes(db, callback){
-    const joinColl = db.collection("test");
-
-    joinColl.insertMany([{
-        title: "Pandas",
-        vote: "bad"
-    }, {
-        title: "Pandas",
-        vote: "good"
-    }, {
-        title: "Pandas",
-        vote: "bad"
-    }, {
-        title: "Very Private Lesson",
-        vote: "good"
-    }], function(err, reply){
-        assert.equal(err, null);
-        callback();
-    });
-
-
-}
-*/
-/*
-function joinOnVotes(db, callback){
-    const collection = db.collection(collName);
-    const collToJoin = "test";
-
-    const pipeline = [{
-        $lookup: {
-            from: collToJoin,
-            localField: "title",
-            foreignField: "title",
-            as: "votes"
-        }
-    }];
-
-    console.log("Computing lookup results...");
-    collection.aggregate(pipeline, function(err, cursor){
-        cursor.toArray(function(error, documents){
-            assert.equal(error, null);
-
-            documents.forEach(function(doc){
-                if(doc.votes.length > 0){
-                    console.log("The following movie has votes in the test collection: ");
-                    console.log(doc);
-                }
-            });
-
-            callback();
-        });
-    });
-}
-*/
-
 function printMedia(entry){
     var str = "";
 
@@ -311,6 +138,7 @@ function printMedia(entry){
 
     console.log(str);
 }
+*/
 
 /**
  * Function to insert pandas short
@@ -398,11 +226,11 @@ function addMedia(db, callback){
     var mediaData = [];
 
     const collection = db.collection(mediaColl);
+    console.log("Adding media objects...");
 
     // Iterate through users objects
     for(var i = 0; i < usersData.length; i++){
         const user = usersData[i];
-        console.log("ADD_MEDIA: User is: " + user);
         if(!user.hasOwnProperty("posted_media")){
             console.log("ADD_MEDIA: Error - no posted_media property for user. Exiting");
             callback();
@@ -450,10 +278,6 @@ function addMedia(db, callback){
         console.log("Insertion of " + result.result.n + " media entries successful...");
         callback();
     });
-/*    for(i = 0; i < mediaData.length; i++){
-        printMedia(mediaData[i]);
-    }
-*/
 }
 
 
