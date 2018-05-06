@@ -431,6 +431,52 @@ function ownLike(db, newid, callback){
     })(newid));
 }
 
+/**
+ * Last two images on timeline
+ * @param db
+ * @param newId
+ * @param callback
+ */
+function lastTwo(db, newId, callback){
+    const usersCollection = db.collection(usersColl);
+    const mediaCollection = db.collection(mediaColl);
+
+    // Find user with following id
+    usersCollection.findOne({_id : newId}, function(err, result){
+        assert.equal(err, null);
+
+        // Get users you follow
+        const followingList = result.following;
+        console.log("OWN_LIKE: User " + result._id + "follows " + followingList.length + " users.");
+
+        // Find and update the media in the media collection corresponding to this image
+        usersCollection.find({_id : { $in: followingList }}).toArray(function(err, result){
+            assert.equal(err, null);
+            console.log("lastTwo: Returned " + result.length + " user docs...");
+
+            // Combine all media into one array
+            var i;
+            var allMedia = [];
+            for(i = 0; i < result.length; i++){
+                const curUser = result[i];
+                console.log("LAST_TWO: Number of posted media by user " + curUser._id + " is " + curUser.posted_media.length);
+                allMedia = allMedia.concat(curUser.posted_media);
+            }
+
+            // Find top two media posted by following list
+            mediaCollection.find({_id : {$in: allMedia}},
+                {limit : 3,
+                 sort : [["time_posted", -1]]}).toArray(function(err, result){
+                     var i;
+                     for(i = 0; i < result.length; i++){
+                         console.log("The " + i + "th newest media posted has date " + result[i].time_posted);
+                     }
+                    callback();
+            });
+        });
+    });
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -454,8 +500,11 @@ MongoClient.connect(url, function(err, client) {
                 uploadMedia(db, newId, function(){
                     // Like your own photo by accident
                     ownLike(db, newId, function(){
-                        // Close connection
-                        closeConn(client);
+                        // Find two most recent posts
+                        lastTwo(db, newId, function(){
+                            // Close connection
+                            closeConn(client);
+                        });
                     });
                 });
             });
