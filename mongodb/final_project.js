@@ -273,6 +273,66 @@ function followJack(db, newId, followingName, callback){
     });
 }
 
+/**
+ * newId user adds comment to media posted
+ * by user he/she follows
+ * @param db
+ * @param newid
+ * @param following
+ * @param callback
+ */
+function addComment(db, newid, following, callback){
+
+
+    const usersCollection = db.collection(usersColl);
+    const mediaCollection = db.collection(mediaColl);
+
+    // Find user with following id and obtain last media_id he posted
+    usersCollection.findOne({name : following}, (function(newid){
+        return function(err, result){
+            assert.equal(err, null);
+            // Get last post
+            const lastPost = result.posted_media[result.posted_media.length - 1];
+            console.log("ADD_COMMENT: Last post for user " + result._id + "had media_id " + lastPost);
+            const newComment = {
+                poster: newid,
+                recipient: result._id,
+                value: "So excited to now be following you!!"
+            };
+            console.log("ADD_COMMENT: New comment by poster: " + newComment.poster + " to recipient " + newComment.recipient);
+
+            // Find and update the media in the media collection corresponding to this image
+            mediaCollection.findOneAndUpdate({_id : lastPost},
+                {
+                    $push : {comments : newComment},
+                    $inc: { "stats.num_comments" : 1 }
+                },
+                {returnOriginal : false},
+                function(err, result){
+                    assert.equal(err, null);
+                    const newEntry = result.value.comments[result.value.comments.length - 1];
+                    const newActivity = {
+                        media_id: result.value._id,
+                        type: "comment",
+                        time: new Date('May 6, 2018 08:49:00'),
+                        comment: newEntry
+                    };
+
+
+                    // Use the comment posted to add to the newId user's activity collection
+                    usersCollection.findOneAndUpdate({_id : newEntry.poster},
+                        {$push : {
+                            activity : newActivity
+                        }}, function(err, result){
+                                assert.equal(err, null);
+                                console.log("Successfully updated " + result.value.name + "'s activity...");
+                                callback();
+                        });
+                });
+        };
+    })(newid));
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -287,8 +347,14 @@ MongoClient.connect(url, function(err, client) {
         // Follow someone new
         console.log("User " + newId + " attempting to follow someone new...");
         followJack(db, newId, followingName, function(){
-            // Close connection
-            closeConn(client);
+
+            // Comment on a post
+            console.log("User " + newId + " attempting to add a comment...");
+            addComment(db, newId, followingName, function(){
+                // Close connection
+                closeConn(client);
+            });
+
         });
     });
 });
