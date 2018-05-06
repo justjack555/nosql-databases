@@ -379,6 +379,58 @@ function uploadMedia(db, newId, callback){
     });
 }
 
+function ownLike(db, newid, callback){
+
+
+    const usersCollection = db.collection(usersColl);
+    const mediaCollection = db.collection(mediaColl);
+
+    // Find user with following id and obtain last media_id he posted
+    usersCollection.findOne({_id : newid}, (function(newid){
+        return function(err, result){
+            assert.equal(err, null);
+            // Get last post
+            const lastPost = result.posted_media[result.posted_media.length - 1];
+            console.log("OWN_LIKE: Last post for user " + result._id + "had media_id " + lastPost);
+            const newReaction = {
+                poster: newid,
+                recipient: result._id,
+                type: "heart"
+            };
+            console.log("ADD_COMMENT: New reaction by poster: " + newReaction.poster + " to recipient " + newReaction.recipient);
+
+            // Find and update the media in the media collection corresponding to this image
+            mediaCollection.findOneAndUpdate({_id : lastPost},
+                {
+                    $push : {reactions : newReaction},
+                    $inc: { "stats.num_reax" : 1 }
+                },
+                {returnOriginal : false},
+                function(err, result){
+                    assert.equal(err, null);
+                    const newEntry = result.value.reactions[result.value.reactions.length - 1];
+                    const newActivity = {
+                        media_id: result.value._id,
+                        type: "reaction",
+                        time: new Date('May 6, 2018 12:19:00'),
+                        reaction: newEntry
+                    };
+
+
+                    // Use the comment posted to add to the newId user's activity collection
+                    usersCollection.findOneAndUpdate({_id : newEntry.poster},
+                        {$push : {
+                            activity : newActivity
+                        }}, function(err, result){
+                            assert.equal(err, null);
+                            console.log("Successfully updated " + result.value.name + "'s activity...");
+                            callback();
+                        });
+                });
+        };
+    })(newid));
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -397,10 +449,14 @@ MongoClient.connect(url, function(err, client) {
             // Comment on a post
             console.log("User " + newId + " attempting to add a comment...");
             addComment(db, newId, followingName, function(){
+                // Upload a photo
                 console.log("Uploading first media object...");
                 uploadMedia(db, newId, function(){
-                    // Close connection
-                    closeConn(client);
+                    // Like your own photo by accident
+                    ownLike(db, newId, function(){
+                        // Close connection
+                        closeConn(client);
+                    });
                 });
             });
 
