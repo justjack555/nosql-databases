@@ -48,6 +48,16 @@ const dbName = 'jackstagram';
 const usersColl = 'users';
 const mediaColl = 'media';
 
+// Types of media
+const photoType = "photo";
+const videoType = "video";
+
+// Image and video sizes
+const minPhotoSize = 3000;
+const photoWeight = 300000;
+const minVidSize = 1000000;
+const vidWeight = 100000000;
+
 // Base object for new user
 const newUser = {
     name : "Dan House",
@@ -333,6 +343,42 @@ function addComment(db, newid, following, callback){
     })(newid));
 }
 
+function uploadMedia(db, newId, callback){
+    const mediaCollection = db.collection(mediaColl);
+    const usersCollection = db.collection(usersColl);
+
+    // Create new media object
+    const newMedia = {
+        type : photoType,
+        stats : {
+            num_reax : 0,
+            num_comments : 0
+        },
+        photo_data : {
+            file_size : Math.floor(photoWeight*Math.random()) + minPhotoSize,
+            filter : "Valencia"
+        },
+        time_posted : new Date('May 6, 2018 11:53:00'),
+        reactions : [],
+        comments : []
+    };
+
+    // Insert it into media collection
+    mediaCollection.insertOne(newMedia, function(err, result){
+        assert.equal(err, null);
+        console.log("UPLOAD_MEDIA: Value of newId in new scope is: " + newId);
+        console.log("Insertion of " + result.result.n + " photo with id " + result.ops[0]._id + " successful...");
+        usersCollection.findOneAndUpdate({_id : newId},
+            {$push : {posted_media : result.ops[0]._id}},
+            {returnOriginal : false},
+            function(err, result){
+                assert.equal(err, null);
+                console.log("Successfully updated user " + result.value.name + "'s posted_media number to " + result.value.posted_media.length);
+                callback();
+            });
+    });
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -351,8 +397,11 @@ MongoClient.connect(url, function(err, client) {
             // Comment on a post
             console.log("User " + newId + " attempting to add a comment...");
             addComment(db, newId, followingName, function(){
-                // Close connection
-                closeConn(client);
+                console.log("Uploading first media object...");
+                uploadMedia(db, newId, function(){
+                    // Close connection
+                    closeConn(client);
+                });
             });
 
         });
