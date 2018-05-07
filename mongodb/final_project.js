@@ -477,6 +477,70 @@ function lastTwo(db, newId, callback){
     });
 }
 
+/**
+ * Get all photos from one other user
+ */
+function oneUser(db, newId, callback){
+    const usersCollection = db.collection(usersColl);
+    const mediaCollection = db.collection(mediaColl);
+
+    // Find user with following id
+    usersCollection.findOne({_id : newId}, function(err, result){
+        assert.equal(err, null);
+
+        // Get users you follow
+        if(result.following.length < 1){
+            console.log("One_User: User is not following anyone. Please follow someone...");
+            return;
+        }
+        // Get other user's ID
+        const otherUser = result.following[0];
+
+        // Find and update the media in the media collection corresponding to this image
+        usersCollection.findOne({_id : otherUser}, function(err, result){
+            assert.equal(err, null);
+            console.log("OTHER_USER: Number of posted media by user " + result._id + " is " + result.posted_media.length);
+
+            // Find top two media posted by following list
+            mediaCollection.find({_id : {$in: result.posted_media}},
+                {
+                    sort : [["time_posted", -1]]
+                }).toArray(function(err, result){
+                var i;
+                for(i = 0; i < result.length; i++){
+                    console.log("The " + i + "th newest media posted by user " + otherUser + " is: " + JSON.stringify(result[i]));
+                }
+                callback();
+            });
+        });
+    });
+}
+
+function unfollow(db, newId, followingName, callback) {
+    const usersCollection = db.collection(usersColl);
+
+    // Find user with following id
+    usersCollection.findOneAndUpdate(
+        {name : followingName},
+        {$pull : {followers : newId}},
+        {returnOriginal : false},
+        function(err, result){
+            assert.equal(err, null);
+            console.log("UNFOLLOW: Does newId remain in followers list? " + result.value.followers.includes(newId));
+
+            // Use unfollowed individual's id to update newId's following list
+            usersCollection.findOneAndUpdate(
+                {_id: newId},
+                {$pull : {following : result.value._id}},
+                {returnOriginal : false},
+                function(err, result){
+                    assert.equal(err, null);
+                    console.log("UNFOLLOW: Size of new user's followers list: " + result.value.following.length);
+                    callback();
+                });
+        });
+}
+
 MongoClient.connect(url, function(err, client) {
     assert.equal(null, err);
     console.log("Connected successfully to server");
@@ -493,17 +557,27 @@ MongoClient.connect(url, function(err, client) {
         followJack(db, newId, followingName, function(){
 
             // Comment on a post
-            console.log("User " + newId + " attempting to add a comment...");
+            console.log("\nUser " + newId + " attempting to add a comment...");
             addComment(db, newId, followingName, function(){
                 // Upload a photo
-                console.log("Uploading first media object...");
+                console.log("\nUploading first media object...");
                 uploadMedia(db, newId, function(){
                     // Like your own photo by accident
+                    console.log("\nLiking own photo by accident...");
                     ownLike(db, newId, function(){
                         // Find two most recent posts
+                        console.log("\nFinding two most recent posts in feed...");
                         lastTwo(db, newId, function(){
-                            // Close connection
-                            closeConn(client);
+                            // See all of the photos from one other user
+                            console.log("\nFinding all of Jack Riccis photos...");
+                            oneUser(db, newId, function(){
+                                // Unfollow other user
+                                console.log("\nUnfollowing Jack Ricci");
+                                unfollow(db, newId, followingName, function(){
+                                    // Close connection
+                                    closeConn(client);
+                                });
+                            });
                         });
                     });
                 });
